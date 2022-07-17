@@ -16,5 +16,63 @@
 
 package network.craft.score;
 
-public class AgoraImpl {
+import score.Address;
+import score.annotation.EventLog;
+import score.annotation.External;
+
+import java.math.BigInteger;
+import java.util.Map;
+
+public class AgoraImpl implements AgoraGov {
+    public AgoraImpl() {
+    }
+
+    @External
+    public void setGovernanceType(String _type, BigInteger _id) {
+
+    }
+
+    @External
+    public void setTokenAddress(String _address) {
+
+    }
+
+    @External
+    public void setMinimumThreshold(BigInteger _amount) {
+
+    }
+
+    @External
+    public void submitProposal(BigInteger _endTime, String _ipfsHash) {
+
+    }
+
+    @External
+    public void vote(BigInteger _proposalId, String _vote) {
+
+    }
+
+    @External
+    public void cancelProposal(BigInteger _proposalId) {
+
+    }
+
+    @External
+    public void closeProposal(BigInteger _proposalId) {
+
+    }
+
+    @External(readonly=true)
+    public Map<String, Object> getProposal(BigInteger _proposalId) {
+        return Map.of();
+    }
+
+    @EventLog(indexed=1)
+    public void ProposalSubmitted(BigInteger _proposalId, Address _creator) {}
+
+    @EventLog(indexed=1)
+    public void ProposalCanceled(BigInteger _proposalId) {}
+
+    @EventLog(indexed=1)
+    public void ProposalClosed(BigInteger _proposalId) {}
 }
