@@ -28,12 +28,7 @@ public class AgoraImpl implements AgoraGov {
     }
 
     @External
-    public void setGovernanceType(String _type, BigInteger _id) {
-
-    }
-
-    @External
-    public void setTokenAddress(String _address) {
+    public void setGovernanceToken(Address _address, String _type, BigInteger _id) {
 
     }
 

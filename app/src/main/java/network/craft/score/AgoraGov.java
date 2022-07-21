@@ -26,23 +26,15 @@ import java.util.Map;
 
 public interface AgoraGov {
     /**
-     * Sets the contract type to be able to call the correct method to read balances.
+     * Sets the token contract address and type to be able to call the correct method to read balances.
      * Admin-only method.
      *
+     * @param _address the address of the token contract to query
      * @param _type IRC-2 or IRC-31
      * @param _id (Optional) If the type is IRC-31, specify a pool id to query
      */
     @External
-    void setGovernanceType(String _type, @Optional BigInteger _id);
-
-    /**
-     * Sets the contract address to read during the votes and checks.
-     * Admin-only method.
-     *
-     * @param _address the address of the contract to query
-     */
-    @External
-    void setTokenAddress(String _address);
+    void setGovernanceToken(Address _address, String _type, @Optional BigInteger _id);
 
     /**
      * Sets the minimum required of tokens to submit a new proposal.
