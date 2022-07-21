@@ -51,7 +51,7 @@ public interface AgoraGov {
      * The proposal id is automatically incremented.
      * The proposal has 3 status: `active`, `closed`, and `cancelled`.
      *
-     * @param _endTime the date of the end of the vote and must be minimum 1 day from `now` and maximum 7 days
+     * @param _endTime the timestamp of the end of the vote and must be minimum 1 day from `now` and maximum 7 days
      * @param _ipfsHash the hash of the content of the proposal, formatting is handled by the frontend
      */
     @External

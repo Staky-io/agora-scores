@@ -18,6 +18,7 @@ package network.craft.score;
 
 import score.Address;
 import score.Context;
+import score.DictDB;
 import score.VarDB;
 import score.annotation.EventLog;
 import score.annotation.External;
@@ -27,13 +28,18 @@ import java.math.BigInteger;
 import java.util.Map;
 
 public class AgoraImpl implements AgoraGov {
+    private static final BigInteger DAY_IN_SECONDS = BigInteger.valueOf(86400);
+    private static final BigInteger DAY_IN_MICROSECONDS = DAY_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));
     private static final String IRC2 = "irc-2";
     private static final String IRC31 = "irc-31";
 
-    private final VarDB<Address> govToken = Context.newVarDB("gov_token", Address.class);
+    private final VarDB<Address> tokenAddress = Context.newVarDB("token_address", Address.class);
     private final VarDB<String> tokenType = Context.newVarDB("token_type", String.class);
     private final VarDB<BigInteger> tokenId = Context.newVarDB("token_id", BigInteger.class);
     private final VarDB<BigInteger> minimumThreshold = Context.newVarDB("minimum_threshold", BigInteger.class);
+
+    private final VarDB<BigInteger> proposalId = Context.newVarDB("proposal_id", BigInteger.class);
+    private final DictDB<BigInteger, Proposal> proposals = Context.newDictDB("proposals", Proposal.class);
 
     private void checkCallerOrThrow(Address caller, String errMsg) {
         Context.require(Context.getCaller().equals(caller), errMsg);
@@ -51,18 +57,18 @@ public class AgoraImpl implements AgoraGov {
         }
         if (IRC2.equals(type)) {
             return Map.of(
-                    "_address", govToken(),
+                    "_address", tokenAddress(),
                     "_type", type);
         } else {
             return Map.of(
-                    "_address", govToken(),
+                    "_address", tokenAddress(),
                     "_type", type,
                     "_id", tokenId());
         }
     }
 
-    private Address govToken() {
-        return govToken.get();
+    private Address tokenAddress() {
+        return tokenAddress.get();
     }
 
     private String tokenType() {
@@ -85,7 +91,7 @@ public class AgoraImpl implements AgoraGov {
             default:
                 Context.revert("InvalidTokenType");
         }
-        govToken.set(_address);
+        tokenAddress.set(_address);
         if (IRC31.equals(type)) {
             tokenId.set(_id);
         }
@@ -103,8 +109,36 @@ public class AgoraImpl implements AgoraGov {
         minimumThreshold.set(_amount);
     }
 
+    private void checkThresholdOrThrow(Address holder) {
+        var tokenProxy = new TokenProxy(tokenAddress(), tokenType(), tokenId());
+        var balance = tokenProxy.balanceOf(holder);
+        Context.require(minimumThreshold().compareTo(balance) <= 0, "MinimumThresholdNotMet");
+    }
+
+    private void checkEndTimeOrThrow(BigInteger _endTime) {
+        var now = Context.getBlockTimestamp();
+        var minimumEnd = DAY_IN_MICROSECONDS.longValue();
+        Context.require(_endTime.longValue() > now + minimumEnd, "InvalidEndTime");
+    }
+
+    private BigInteger getNextId() {
+        BigInteger _id = proposalId.getOrDefault(BigInteger.ZERO);
+        _id = _id.add(BigInteger.ONE);
+        proposalId.set(_id);
+        return _id;
+    }
+
     @External
     public void submitProposal(BigInteger _endTime, String _ipfsHash) {
+        Address sender = Context.getCaller();
+        Context.require(!sender.isContract(), "Only EOA can submit proposal");
+        checkThresholdOrThrow(sender);
+        checkEndTimeOrThrow(_endTime);
+
+        BigInteger pid = getNextId();
+        Proposal pl = new Proposal(_endTime, _ipfsHash, Proposal.STATUS_ACTIVE);
+        proposals.set(pid, pl);
+        ProposalSubmitted(pid, sender);
     }
 
     @External
