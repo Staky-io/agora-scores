@@ -17,6 +17,7 @@
 package network.craft.score;
 
 import score.Address;
+import score.BranchDB;
 import score.Context;
 import score.DictDB;
 import score.VarDB;
@@ -30,8 +31,6 @@ import java.util.Map;
 public class AgoraImpl implements AgoraGov {
     private static final BigInteger DAY_IN_SECONDS = BigInteger.valueOf(86400);
     private static final BigInteger DAY_IN_MICROSECONDS = DAY_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));
-    private static final String IRC2 = "irc-2";
-    private static final String IRC31 = "irc-31";
 
     private final VarDB<Address> tokenAddress = Context.newVarDB("token_address", Address.class);
     private final VarDB<String> tokenType = Context.newVarDB("token_type", String.class);
@@ -40,6 +39,9 @@ public class AgoraImpl implements AgoraGov {
 
     private final VarDB<BigInteger> proposalId = Context.newVarDB("proposal_id", BigInteger.class);
     private final DictDB<BigInteger, Proposal> proposals = Context.newDictDB("proposals", Proposal.class);
+    // proposalId => holder => token votes
+    private final BranchDB<BigInteger, DictDB<Address, BigInteger>> tokenVotes = Context.newBranchDB("token_votes", BigInteger.class);
+    private final DictDB<BigInteger, Votes> votes = Context.newDictDB("votes_sum", Votes.class);
 
     private void checkCallerOrThrow(Address caller, String errMsg) {
         Context.require(Context.getCaller().equals(caller), errMsg);
@@ -55,7 +57,7 @@ public class AgoraImpl implements AgoraGov {
         if (type == null) {
             return Map.of();
         }
-        if (IRC2.equals(type)) {
+        if (TokenProxy.IRC2.equals(type)) {
             return Map.of(
                     "_address", tokenAddress(),
                     "_type", type);
@@ -84,15 +86,15 @@ public class AgoraImpl implements AgoraGov {
         onlyOwner();
         var type = _type.toLowerCase();
         switch (type) {
-            case IRC2:
-            case IRC31:
+            case TokenProxy.IRC2:
+            case TokenProxy.IRC31:
                 tokenType.set(type);
                 break;
             default:
                 Context.revert("InvalidTokenType");
         }
         tokenAddress.set(_address);
-        if (IRC31.equals(type)) {
+        if (TokenProxy.IRC31.equals(type)) {
             tokenId.set(_id);
         }
     }
@@ -107,12 +109,6 @@ public class AgoraImpl implements AgoraGov {
         onlyOwner();
         Context.require(_amount.signum() > 0, "Minimum threshold must be positive");
         minimumThreshold.set(_amount);
-    }
-
-    private void checkThresholdOrThrow(Address holder) {
-        var tokenProxy = new TokenProxy(tokenAddress(), tokenType(), tokenId());
-        var balance = tokenProxy.balanceOf(holder);
-        Context.require(minimumThreshold().compareTo(balance) <= 0, "MinimumThresholdNotMet");
     }
 
     private void checkEndTimeOrThrow(BigInteger _endTime) {
@@ -132,8 +128,11 @@ public class AgoraImpl implements AgoraGov {
     public void submitProposal(BigInteger _endTime, String _ipfsHash) {
         Address sender = Context.getCaller();
         Context.require(!sender.isContract(), "Only EOA can submit proposal");
-        checkThresholdOrThrow(sender);
         checkEndTimeOrThrow(_endTime);
+
+        var tokenProxy = new TokenProxy(tokenAddress(), tokenType(), tokenId());
+        var balance = tokenProxy.balanceOf(sender);
+        Context.require(minimumThreshold().compareTo(balance) <= 0, "MinimumThresholdNotMet");
 
         BigInteger pid = getNextId();
         Proposal pl = new Proposal(_endTime, _ipfsHash, Proposal.STATUS_ACTIVE);
@@ -143,7 +142,28 @@ public class AgoraImpl implements AgoraGov {
 
     @External
     public void vote(BigInteger _proposalId, String _vote) {
+        Address sender = Context.getCaller();
+        Context.require(!sender.isContract(), "Only EOA can submit proposal");
 
+        Proposal pl = proposals.get(_proposalId);
+        Context.require(pl != null, "InvalidProposalId");
+        Context.require(pl.getStatus() == Proposal.STATUS_ACTIVE, "ProposalNotActive");
+
+        var tokenProxy = new TokenProxy(tokenAddress(), tokenType(), tokenId());
+        var balance = tokenProxy.balanceOf(sender);
+        Context.require(balance.signum() > 0, "NotTokenHolder");
+
+        var vote = _vote.toLowerCase();
+        Context.require(Votes.isValid(vote), "InvalidVoteType");
+
+        Context.require(tokenVotes.at(_proposalId).get(sender) == null, "AlreadyVoted");
+        tokenVotes.at(_proposalId).set(sender, balance);
+        var vs = votes.get(_proposalId);
+        if (vs == null) {
+            vs = new Votes();
+        }
+        vs.increase(vote, balance);
+        votes.set(_proposalId, vs);
     }
 
     @External

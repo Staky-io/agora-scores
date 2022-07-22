@@ -44,6 +44,10 @@ public class Proposal {
         return ipfsHash;
     }
 
+    public int getStatus() {
+        return status;
+    }
+
     public static void writeObject(ObjectWriter w, Proposal p) {
         w.writeListOf(p.endTime, p.ipfsHash, p.status);
     }

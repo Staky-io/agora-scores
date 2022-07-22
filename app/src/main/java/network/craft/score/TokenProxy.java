@@ -22,6 +22,9 @@ import score.Context;
 import java.math.BigInteger;
 
 public class TokenProxy {
+    public static final String IRC2 = "irc-2";
+    public static final String IRC31 = "irc-31";
+
     private final Address address;
     private final String type;
     private final BigInteger id;
@@ -34,6 +37,10 @@ public class TokenProxy {
     }
 
     public BigInteger balanceOf(Address holder) {
-        return Context.call(BigInteger.class, address, "balanceOf");
+        if (IRC2.equals(type)) {
+            return Context.call(BigInteger.class, address, "balanceOf", holder);
+        } else {
+            return Context.call(BigInteger.class, address, "balanceOf", holder, id);
+        }
     }
 }
