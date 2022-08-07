@@ -29,7 +29,9 @@ import java.math.BigInteger;
 import java.util.Map;
 
 public class AgoraImpl implements AgoraGov {
-    private static final BigInteger DAY_IN_SECONDS = BigInteger.valueOf(86400);
+    private static final BigInteger HOUR_IN_SECONDS = BigInteger.valueOf(3600);
+    private static final BigInteger DAY_IN_SECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(24));
+    private static final BigInteger HOUR_IN_MICROSECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));
     private static final BigInteger DAY_IN_MICROSECONDS = DAY_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));
 
     private final VarDB<Address> tokenAddress = Context.newVarDB("token_address", Address.class);
@@ -135,7 +137,9 @@ public class AgoraImpl implements AgoraGov {
         Context.require(minimumThreshold().compareTo(balance) <= 0, "MinimumThresholdNotMet");
 
         BigInteger pid = getNextId();
-        Proposal pl = new Proposal(_endTime, _ipfsHash, Proposal.STATUS_ACTIVE);
+        long createTime = Context.getBlockTimestamp();
+        long endTime = _endTime.longValue();
+        Proposal pl = new Proposal(sender, createTime, endTime, _ipfsHash, Proposal.STATUS_ACTIVE);
         proposals.set(pid, pl);
         ProposalSubmitted(pid, sender);
     }
@@ -168,7 +172,19 @@ public class AgoraImpl implements AgoraGov {
 
     @External
     public void cancelProposal(BigInteger _proposalId) {
+        Address sender = Context.getCaller();
+        Proposal pl = proposals.get(_proposalId);
+        Context.require(pl != null, "InvalidProposalId");
+        Context.require(pl.getCreator().equals(sender), "NotCreator");
+        Context.require(pl.getStatus() == Proposal.STATUS_ACTIVE, "ProposalNotActive");
 
+        long now = Context.getBlockTimestamp();
+        long graceTime = 3 * HOUR_IN_MICROSECONDS.longValue();
+        Context.require(pl.getStartTime() + graceTime > now, "GraceTimePassed");
+
+        pl.setStatus(Proposal.STATUS_CANCELED);
+        proposals.set(_proposalId, pl);
+        ProposalCanceled(_proposalId);
     }
 
     @External

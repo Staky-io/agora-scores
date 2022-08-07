@@ -71,6 +71,7 @@ public interface AgoraGov {
     /**
      * Cancels a proposal.
      * Possible only by the creator and if the proposal has been created in the past 3 hours.
+     * The proposal has to be in `active` state.
      *
      * @param _proposalId id of the proposal
      */

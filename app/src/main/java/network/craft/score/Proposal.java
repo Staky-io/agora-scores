@@ -16,27 +16,38 @@
 
 package network.craft.score;
 
+import score.Address;
 import score.ObjectReader;
 import score.ObjectWriter;
-
-import java.math.BigInteger;
 
 public class Proposal {
     public static final int STATUS_ACTIVE = 1;
     public static final int STATUS_CLOSED = 2;
     public static final int STATUS_CANCELED = 3;
 
-    private final BigInteger endTime;
+    private final Address creator;
+    private final long startTime;
+    private final long endTime;
     private final String ipfsHash;
-    private final int status;
+    private int status;
 
-    public Proposal(BigInteger endTime, String ipfsHash, int status) {
+    public Proposal(Address creator, long startTime, long endTime, String ipfsHash, int status) {
+        this.creator = creator;
+        this.startTime = startTime;
         this.endTime = endTime;
         this.ipfsHash = ipfsHash;
         this.status = status;
     }
 
-    public BigInteger getEndTime() {
+    public Address getCreator() {
+        return creator;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public long getEndTime() {
         return endTime;
     }
 
@@ -48,14 +59,20 @@ public class Proposal {
         return status;
     }
 
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
     public static void writeObject(ObjectWriter w, Proposal p) {
-        w.writeListOf(p.endTime, p.ipfsHash, p.status);
+        w.writeListOf(p.creator, p.startTime, p.endTime, p.ipfsHash, p.status);
     }
 
     public static Proposal readObject(ObjectReader r) {
         r.beginList();
         Proposal p = new Proposal(
-                r.readBigInteger(),
+                r.readAddress(),
+                r.readLong(),
+                r.readLong(),
                 r.readString(),
                 r.readInt()
         );
