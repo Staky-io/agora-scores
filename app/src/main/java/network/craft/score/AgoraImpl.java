@@ -203,7 +203,23 @@ public class AgoraImpl implements AgoraGov {
 
     @External(readonly=true)
     public Map<String, Object> getProposal(BigInteger _proposalId) {
-        return Map.of();
+        Proposal pl = proposals.get(_proposalId);
+        Context.require(pl != null, "InvalidProposalId");
+
+        var vs = votes.get(_proposalId);
+        if (vs == null) {
+            vs = new Votes();
+        }
+        return Map.ofEntries(
+                Map.entry("_proposalId", _proposalId),
+                Map.entry("_creator", pl.getCreator()),
+                Map.entry("_status", Proposal.STATUS_MSG[pl.getStatus()]),
+                Map.entry("_endTime", pl.getEndTime()),
+                Map.entry("_ipfsHash", pl.getIpfsHash()),
+                Map.entry("_forVoices", vs.getFor()),
+                Map.entry("_againstVoices", vs.getAgainst()),
+                Map.entry("_abstainVoices", vs.getAbstain())
+        );
     }
 
     @EventLog(indexed=1)

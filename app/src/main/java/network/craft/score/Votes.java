@@ -63,6 +63,18 @@ public class Votes {
         }
     }
 
+    public BigInteger getFor() {
+        return _for;
+    }
+
+    public BigInteger getAgainst() {
+        return _against;
+    }
+
+    public BigInteger getAbstain() {
+        return _abstain;
+    }
+
     public static void writeObject(ObjectWriter w, Votes v) {
         w.writeListOf(v._for, v._against, v._abstain);
     }

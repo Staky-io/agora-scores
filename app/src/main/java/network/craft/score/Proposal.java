@@ -24,6 +24,12 @@ public class Proposal {
     public static final int STATUS_ACTIVE = 1;
     public static final int STATUS_CLOSED = 2;
     public static final int STATUS_CANCELED = 3;
+    public static final String[] STATUS_MSG = new String[]{
+            "None",
+            "Active",
+            "Closed",
+            "Canceled"
+    };
 
     private final Address creator;
     private final long startTime;
