@@ -189,7 +189,16 @@ public class AgoraImpl implements AgoraGov {
 
     @External
     public void closeProposal(BigInteger _proposalId) {
+        Proposal pl = proposals.get(_proposalId);
+        Context.require(pl != null, "InvalidProposalId");
+        Context.require(pl.getStatus() == Proposal.STATUS_ACTIVE, "ProposalNotActive");
 
+        long now = Context.getBlockTimestamp();
+        Context.require(pl.getEndTime() <= now, "EndTimeNotReached");
+
+        pl.setStatus(Proposal.STATUS_CLOSED);
+        proposals.set(_proposalId, pl);
+        ProposalClosed(_proposalId);
     }
 
     @External(readonly=true)
