@@ -45,6 +45,11 @@ public class AgoraImpl implements AgoraGov {
     private final BranchDB<BigInteger, DictDB<Address, BigInteger>> tokenVotes = Context.newBranchDB("token_votes", BigInteger.class);
     private final DictDB<BigInteger, Votes> votes = Context.newDictDB("votes_sum", Votes.class);
 
+    @External(readonly=true)
+    public String name() {
+        return "AgoraScore";
+    }
+
     private void checkCallerOrThrow(Address caller, String errMsg) {
         Context.require(Context.getCaller().equals(caller), errMsg);
     }
