@@ -89,6 +89,14 @@ public interface AgoraGov {
     void closeProposal(BigInteger _proposalId);
 
     /**
+     * Returns the last proposal id.
+     *
+     * @return the last proposal id
+     */
+    @External(readonly=true)
+    BigInteger lastProposalId();
+
+    /**
      * Returns the object of the proposal.
      *
      * @param _proposalId id of the proposal

@@ -118,6 +118,11 @@ public class AgoraImpl implements AgoraGov {
         minimumThreshold.set(_amount);
     }
 
+    @External(readonly=true)
+    public BigInteger lastProposalId() {
+        return proposalId.getOrDefault(BigInteger.ZERO);
+    }
+
     private void checkEndTimeOrThrow(BigInteger _endTime) {
         var now = Context.getBlockTimestamp();
         var minimumEnd = DAY_IN_MICROSECONDS.longValue();
@@ -125,7 +130,7 @@ public class AgoraImpl implements AgoraGov {
     }
 
     private BigInteger getNextId() {
-        BigInteger _id = proposalId.getOrDefault(BigInteger.ZERO);
+        BigInteger _id = lastProposalId();
         _id = _id.add(BigInteger.ONE);
         proposalId.set(_id);
         return _id;
