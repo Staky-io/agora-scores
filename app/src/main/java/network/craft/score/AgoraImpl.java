@@ -29,10 +29,10 @@ import java.math.BigInteger;
 import java.util.Map;
 
 public class AgoraImpl implements AgoraGov {
-    private static final BigInteger HOUR_IN_SECONDS = BigInteger.valueOf(3600);
-    private static final BigInteger DAY_IN_SECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(24));
-    private static final BigInteger HOUR_IN_MICROSECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));
-    private static final BigInteger DAY_IN_MICROSECONDS = DAY_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));
+    public static final BigInteger HOUR_IN_SECONDS = BigInteger.valueOf(3600);
+    public static final BigInteger DAY_IN_SECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(24));
+    public static final BigInteger HOUR_IN_MICROSECONDS = HOUR_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));
+    public static final BigInteger DAY_IN_MICROSECONDS = DAY_IN_SECONDS.multiply(BigInteger.valueOf(1_000_000));
 
     private final VarDB<Address> tokenAddress = Context.newVarDB("token_address", Address.class);
     private final VarDB<String> tokenType = Context.newVarDB("token_type", String.class);
@@ -42,7 +42,7 @@ public class AgoraImpl implements AgoraGov {
     private final VarDB<BigInteger> proposalId = Context.newVarDB("proposal_id", BigInteger.class);
     private final DictDB<BigInteger, Proposal> proposals = Context.newDictDB("proposals", Proposal.class);
     // proposalId => holder => token votes
-    private final BranchDB<BigInteger, DictDB<Address, BigInteger>> tokenVotes = Context.newBranchDB("token_votes", BigInteger.class);
+    private final BranchDB<BigInteger, DictDB<Address, TokenVote>> tokenVotes = Context.newBranchDB("token_votes", TokenVote.class);
     private final DictDB<BigInteger, Votes> votes = Context.newDictDB("votes_sum", Votes.class);
 
     @External(readonly=true)
@@ -171,7 +171,7 @@ public class AgoraImpl implements AgoraGov {
         Context.require(Votes.isValid(vote), "InvalidVoteType");
 
         Context.require(tokenVotes.at(_proposalId).get(sender) == null, "AlreadyVoted");
-        tokenVotes.at(_proposalId).set(sender, balance);
+        tokenVotes.at(_proposalId).set(sender, new TokenVote(vote, balance));
         var vs = votes.get(_proposalId);
         if (vs == null) {
             vs = new Votes();
@@ -230,6 +230,18 @@ public class AgoraImpl implements AgoraGov {
                 Map.entry("_againstVoices", vs.getAgainst()),
                 Map.entry("_abstainVoices", vs.getAbstain())
         );
+    }
+
+    @External(readonly=true)
+    public Map<String, Object> getVote(Address _voter, BigInteger _proposalId) {
+        var tokenVote = tokenVotes.at(_proposalId).get(_voter);
+        if (tokenVote != null) {
+            return Map.of(
+                    "_vote", tokenVote.getVote(),
+                    "_power", tokenVote.getAmount()
+            );
+        }
+        return Map.of();
     }
 
     @EventLog(indexed=1)

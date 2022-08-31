@@ -106,6 +106,16 @@ public interface AgoraGov {
     Map<String, Object> getProposal(BigInteger _proposalId);
 
     /**
+     * Returns the vote for a given user.
+     *
+     * @param _voter the voter
+     * @param _proposalId id of the proposal
+     * @return Map of vote and voting power
+     */
+    @External(readonly=true)
+    Map<String, Object> getVote(Address _voter, BigInteger _proposalId);
+
+    /**
      * Notifies the user that the proposal has been successfully submitted.
      *
      * @param _proposalId id of the proposal
