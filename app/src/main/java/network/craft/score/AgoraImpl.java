@@ -225,6 +225,7 @@ public class AgoraImpl implements AgoraGov {
                 Map.entry("_creator", pl.getCreator()),
                 Map.entry("_status", Proposal.STATUS_MSG[pl.getStatus()]),
                 Map.entry("_endTime", pl.getEndTime()),
+                Map.entry("_startTime", pl.getStartTime()),
                 Map.entry("_ipfsHash", pl.getIpfsHash()),
                 Map.entry("_forVoices", vs.getFor()),
                 Map.entry("_againstVoices", vs.getAgainst()),
