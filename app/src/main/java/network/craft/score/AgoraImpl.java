@@ -91,6 +91,7 @@ public class AgoraImpl implements AgoraGov {
     @External
     public void setGovernanceToken(Address _address, String _type, @Optional BigInteger _id) {
         onlyOwner();
+        Context.require(tokenAddress() == null, "GovernanceTokenAlreadySet");
         var type = _type.toLowerCase();
         switch (type) {
             case TokenProxy.IRC2:

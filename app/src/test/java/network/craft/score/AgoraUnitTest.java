@@ -29,6 +29,7 @@ import java.math.BigInteger;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AgoraUnitTest extends TestBase {
     private static final ServiceManager sm = getServiceManager();
@@ -57,6 +58,13 @@ class AgoraUnitTest extends TestBase {
     @Test
     void name() {
         assertEquals("AgoraScore", agoraScore.call("name"));
+    }
+
+    @Test
+    void setGovernanceToken() {
+        assertThrows(AssertionError.class, () ->
+                agoraScore.invoke(owner, "setGovernanceToken", tokenScore.getAddress(), "irc-2", BigInteger.ZERO)
+        );
     }
 
     @Test
