@@ -3,3 +3,6 @@
 *.iml
 build
 out
+venv
+run.py
+scripts
