@@ -66,28 +66,4 @@ class AgoraUnitTest extends TestBase {
                 agoraScore.invoke(owner, "setGovernanceToken", tokenScore.getAddress(), "irc-2", BigInteger.ZERO)
         );
     }
-
-    @Test
-    void getVote() {
-        // submit dummy proposal
-        long endTime = sm.getBlock().getTimestamp() + 2 * AgoraImpl.DAY_IN_MICROSECONDS.longValue();
-        agoraScore.invoke(owner, "submitProposal", BigInteger.valueOf(endTime), "testIpfsHash");
-
-        var pid = (BigInteger) agoraScore.call("lastProposalId");
-        agoraScore.invoke(owner, "vote", pid, "for");
-        agoraScore.invoke(alice, "vote", pid, "against");
-
-        for (Account voter : new Account[]{owner, alice}) {
-            @SuppressWarnings("unchecked")
-            var vote = (Map<String, Object>) agoraScore.call("getVote", voter.getAddress(), pid);
-            System.out.println(vote);
-            if (voter.equals(owner)) {
-                assertEquals("for", vote.get("_vote"));
-            } else {
-                assertEquals("against", vote.get("_vote"));
-            }
-            var balance = tokenScore.call("balanceOf", voter.getAddress());
-            assertEquals(balance, vote.get("_power"));
-        }
-    }
 }

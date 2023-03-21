@@ -36,14 +36,6 @@ public interface AgoraGov {
     @External
     void setGovernanceToken(Address _address, String _type, @Optional BigInteger _id);
 
-    /**
-     * Sets the minimum required of tokens to submit a new proposal.
-     * Admin-only method.
-     *
-     * @param _amount the minimum amount of token to have in `tokenAddress`
-     */
-    @External
-    void setMinimumThreshold(BigInteger _amount);
 
     /**
      * Creates a proposal.
