@@ -37,7 +37,6 @@ public class AgoraImpl implements AgoraGov {
     private final VarDB<Address> tokenAddress = Context.newVarDB("token_address", Address.class);
     private final VarDB<String> tokenType = Context.newVarDB("token_type", String.class);
     private final VarDB<BigInteger> tokenId = Context.newVarDB("token_id", BigInteger.class);
-    private final VarDB<BigInteger> minimumThreshold = Context.newVarDB("minimum_threshold", BigInteger.class);
 
     private final VarDB<BigInteger> proposalId = Context.newVarDB("proposal_id", BigInteger.class);
     private final DictDB<BigInteger, Proposal> proposals = Context.newDictDB("proposals", Proposal.class);
@@ -108,18 +107,6 @@ public class AgoraImpl implements AgoraGov {
     }
 
     @External(readonly=true)
-    public BigInteger minimumThreshold() {
-        return minimumThreshold.getOrDefault(BigInteger.ZERO);
-    }
-
-    @External
-    public void setMinimumThreshold(BigInteger _amount) {
-        onlyOwner();
-        Context.require(_amount.signum() > 0, "Minimum threshold must be positive");
-        minimumThreshold.set(_amount);
-    }
-
-    @External(readonly=true)
     public BigInteger lastProposalId() {
         return proposalId.getOrDefault(BigInteger.ZERO);
     }
@@ -142,10 +129,8 @@ public class AgoraImpl implements AgoraGov {
         Address sender = Context.getCaller();
         Context.require(!sender.isContract(), "Only EOA can submit proposal");
         checkEndTimeOrThrow(_endTime);
-
-        var tokenProxy = new TokenProxy(tokenAddress(), tokenType(), tokenId());
-        var balance = tokenProxy.balanceOf(sender);
-        Context.require(minimumThreshold().compareTo(balance) <= 0, "MinimumThresholdNotMet");
+        boolean isAdmin = (boolean) Context.call(tokenAddress(), "isAdmin", sender);
+        Context.require(isAdmin == true, "NotAllowedToCreateProposals");
 
         BigInteger pid = getNextId();
         long createTime = Context.getBlockTimestamp();
